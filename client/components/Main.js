@@ -2,8 +2,8 @@ import React from 'react';
 import DeckGL, {
   ScatterplotLayer,
   HexagonLayer,
-  HexagonCellLayer,
   LinearInterpolator,
+  IconLayer,
 } from 'deck.gl';
 import {
   LayerControls,
@@ -13,17 +13,12 @@ import {
 import axios from 'axios';
 import * as d3 from 'd3';
 import { tooltipStyle, clickedIconStyle } from './style';
-import * as MapboxGL from 'mapbox-gl';
 import police from './police';
-
-const ease = d3.easeCubicInOut;
+import ReactMapGL from 'react-map-gl';
 
 const transitionInterpolator = new LinearInterpolator(['bearing']);
 
 const MAPBOX_STYLE = 'mapbox://styles/mapbox/dark-v9';
-
-import ReactMapGL from 'react-map-gl';
-// import DeckGLOverlay from './deckgl-overlay';
 
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiamFzb254aGFuZyIsImEiOiJjam1pNjJ5ajIwMW1lM3JwazVyZWE1bW4xIn0.xt5U4JljOeJoD7ArM66mIA';
@@ -45,8 +40,6 @@ const LIGHT_SETTINGS = {
   lightsStrength: [0.8, 0.0, 0.8, 0.0],
   numberOfLights: 2,
 };
-
-const elevationScale = { min: 1, max: 50 };
 
 class Main extends React.Component {
   constructor(props) {
@@ -109,40 +102,6 @@ class Main extends React.Component {
   componentWillUnmount() {
     window.removeEventListener('resize', this._resize);
   }
-
-  // componentWillReceiveProps(nextProps) {
-  //   if (
-  //     nextProps.data &&
-  //     this.props.data &&
-  //     nextProps.data.length !== this.props.data.length
-  //   ) {
-  //     this._animate();
-  //   }
-  // }
-
-  // _animate = () => {
-  //   this._stopAnimate();
-
-  //   // wait 1.5 secs to start animation so that all data are loaded
-  //   this.startAnimationTimer = window.setTimeout(this._startAnimate, 1500);
-  // };
-
-  // _startAnimate = () => {
-  //   this.intervalTimer = window.setInterval(this._animateHeight, 20);
-  // };
-
-  // _stopAnimate = () => {
-  //   window.clearTimeout(this.startAnimationTimer);
-  //   window.clearTimeout(this.intervalTimer);
-  // };
-
-  // _animateHeight = () => {
-  //   if (this.state.elevationScale === elevationScale.max) {
-  //     this._stopAnimate();
-  //   } else {
-  //     this.setState({ elevationScale: this.state.elevationScale + 1 });
-  //   }
-  // };
 
   _fetchStaticData = async () => {
     let { data } = await axios.get(
@@ -369,27 +328,6 @@ class Main extends React.Component {
       getRadius: d => Math.sqrt(d.hordeSize),
       getColor: d => [166, 16, 30],
       ...this.state.settings,
-      // updateTriggers: {
-      //   getPositions: {
-      //     duration: 600,
-      //     easing: ease,
-      //     enter: value => [value[0], value[1], value[2], 0] // fade in
-      //   },
-      // },
-      // transitions: {
-      //   getPositions: {
-      //     duration: 600,
-      //     easing: ease,
-      //     enter: value => [value[0], value[1], value[2], 0], // fade in
-      //     // enter: feature => feature.properties.fill.concat(0),
-      //   },
-      //   getColors: {
-      //     // duration: 300,
-      //     easing: d3.easeCubicInOut,
-      //     enter: value => [value[0], value[1], value[2], 0] // fade in
-      //   },
-      // },
-      // onHover: ({object}) => setTooltip(`${object.name}\n${object.address}`)
       onHover: object => this._onHover(object),
       onClick: object => this._onObjectClick(object),
     });
@@ -409,6 +347,33 @@ class Main extends React.Component {
       onHover: object => this._onHover(object),
       onClick: object => this._onObjectClick(object),
     });
+
+    // const layer2 = new IconLayer({
+    //   id: 'icon-layer',
+    //   data: this.state.hospitals,
+    //   pickable: true,
+    //   visible: true,
+    //   iconAtlas: "../components/icons/hospital.png",
+    //   iconMapping: {
+    //     hospital: {
+    //       x: 0,
+    //       y: 0,
+    //       width: 16,
+    //       height: 16,
+    //       anchorY: 16,
+    //       mask: true,
+    //     },
+    //   },
+    //   sizeScale: 1,
+    //   opacity: 0.6,
+    //   radiusMinPixels: 1,
+    //   getPosition: d => d.geometry.coordinates,
+    //   getSize: d => 15,
+    //   getIcon: d => 'hospital',
+    //   getColor: d => [255, 0, 128],
+    //   onHover: object => this._onHover(object),
+    //   onClick: object => this._onObjectClick(object),
+    // });
 
     const layer4 = new ScatterplotLayer({
       id: 'police-layer',
@@ -452,11 +417,12 @@ class Main extends React.Component {
 
     // const layers = [layer1, layer2, layer4, layer3];
 
-
     return (
       <div>
-        {this.state.hoveredObject !== {} ? this._renderTooltipHover() : ''}
-        {this.state.clickedObject !== {} ? this._renderClickedIcon() : ''}
+        {/* {this.state.hoveredObject !== {} ? this._renderTooltipHover() : ''}
+        {this.state.clickedObject !== {} ? this._renderClickedIcon() : ''} */}
+        {this._renderTooltipHover()}
+        {this._renderClickedIcon()}
         <LayerControls
           settings={this.state.settings}
           propTypes={HEXAGON_CONTROLS}
@@ -471,10 +437,8 @@ class Main extends React.Component {
         >
           <DeckGL
             onLoad={this._onLoad}
-            // onViewStateChange={this._onViewStateChange}
             onViewStateChange={viewport => this._onViewStateChange(viewport)}
             controller={true}
-            onHover={hover => this._onHover(hover)}
             {...this.state.viewport}
             layers={layers}
             {...this.state.settings}

@@ -6,6 +6,5 @@
 
 // All Visitors
 export {default as Main} from './Main'
-export {default as ReactMap} from './ReactMap'
-export {default as MapboxMap} from './MapboxMap'
+
 
