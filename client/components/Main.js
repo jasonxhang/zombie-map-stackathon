@@ -15,6 +15,7 @@ import * as d3 from 'd3';
 import { tooltipStyle, clickedIconStyle } from './style';
 import police from './police';
 import ReactMapGL from 'react-map-gl';
+import socket from './socket';
 
 const transitionInterpolator = new LinearInterpolator(['bearing']);
 
@@ -56,6 +57,7 @@ class Main extends React.Component {
         altitude: 2,
         bearing: 70,
       },
+      busData: [],
       points: [],
       hospitals: [],
       police: [],
@@ -90,6 +92,7 @@ class Main extends React.Component {
   }
 
   componentDidMount() {
+    // socket.on('busData', data => this.setState({ busData: data }));
     this._processData();
     window.addEventListener('resize', this._resize);
     this._resize();
@@ -104,12 +107,12 @@ class Main extends React.Component {
   }
 
   _fetchStaticData = async () => {
-    let { data } = await axios.get(
-      'https://www.newyorkled.com/maps/geojson/layer/10/'
-    );
-    this.setState({
-      hospitals: data.features,
-    });
+    // let { data } = await axios.get(
+    //   'https://www.newyorkled.com/maps/geojson/layer/10/'
+    // );
+    // this.setState({
+    //   hospitals: data.features,
+    // });
   };
 
   _resize = () => {
@@ -140,40 +143,47 @@ class Main extends React.Component {
   };
 
   _processData() {
-    const getData = async () => {
-      const { data } = await axios.get('/api/bus');
-      // console.log('data', data);
+    // const getData = async () => {
+    // const { data } = await axios.get('/api/bus');
+    // console.log('data', data);
 
-      const points = data.reduce((accu, curr) => {
-        let raw = curr.trip.route_id.replace(/\D/, '');
-
-        const hordeSizeCalc = x => {
-          if (Math.floor(Math.random() * 25) + 1 == 1) {
-            return parseInt(x) + (Math.floor(Math.random() * 3) + 1);
-          } else {
-            return x;
-          }
-        };
-
-        let hordeSize = hordeSizeCalc(raw);
-        if (hordeSize > 0) {
-          accu.push({
-            position: [
-              Number(curr.position.longitude),
-              Number(curr.position.latitude),
-            ],
-            type: 'Dead',
-            hordeSize,
-          });
-        }
-        return accu;
-      }, []);
-
+    socket.on('busData', data => {
+      // this.setState({ busData: data });
       this.setState({
-        points,
+        points: data,
       });
-    };
-    setInterval(getData, 2000);
+      // console.log(this.state.busData);
+
+    });
+    // const points = this.state.busData.reduce((accu, curr) =>{
+    //   let raw = curr.trip.route_id.replace(/\D/, '');
+
+    //   const hordeSizeCalc = x => {
+    //     if (Math.floor(Math.random() * 25) + 1 == 1) {
+    //       return parseInt(x) + (Math.floor(Math.random() * 3) + 1);
+    //     } else {
+    //       return x;
+    //     }
+    //   };
+
+    //   let hordeSize = hordeSizeCalc(raw);
+    //   if (hordeSize > 0) {
+    //     accu.push({
+    //       position: [
+    //         Number(curr.position.longitude),
+    //         Number(curr.position.latitude),
+    //       ],
+    //       type: 'Dead',
+    //       hordeSize,
+    //     });
+    //   }
+    //   return accu;
+    // }, []);
+    // this.setState({
+    //   points,
+    // });
+    // };
+    // setInterval(getData, 25000);
   }
 
   _updateLayerSettings = settings => {
@@ -314,8 +324,11 @@ class Main extends React.Component {
   };
 
   render() {
-    console.log('viewport', this.state.viewport);
-
+    // console.log('viewport', this.state.viewport);
+    // console.log('process data')
+    // console.log(this.state.busData)
+    // console.log('points')
+    // console.log(this.state.points)
     const layer1 = new ScatterplotLayer({
       id: 'zombie-layer',
       data: [...this.state.points],
@@ -332,61 +345,88 @@ class Main extends React.Component {
       onClick: object => this._onObjectClick(object),
     });
 
-    const layer2 = new ScatterplotLayer({
-      id: 'hospital-layer',
-      data: this.state.hospitals,
-      pickable: true,
-      extruded: true,
-      getColor: d => [255, 255, 255],
-      getRadius: 10,
-      getElevation: d => 10,
-      getPosition: d => d.geometry.coordinates,
-      radiusScale: 10,
-      radiusMinPixels: 1,
-      radiusMaxPixels: 50,
-      onHover: object => this._onHover(object),
-      onClick: object => this._onObjectClick(object),
-    });
-
-    // const layer2 = new IconLayer({
-    //   id: 'icon-layer',
+    // const layer2 = new ScatterplotLayer({
+    //   id: 'hospital-layer',
     //   data: this.state.hospitals,
     //   pickable: true,
-    //   visible: true,
-    //   iconAtlas: "../components/icons/hospital.png",
-    //   iconMapping: {
-    //     hospital: {
-    //       x: 0,
-    //       y: 0,
-    //       width: 16,
-    //       height: 16,
-    //       anchorY: 16,
-    //       mask: true,
-    //     },
-    //   },
-    //   sizeScale: 1,
-    //   opacity: 0.6,
-    //   radiusMinPixels: 1,
+    //   extruded: true,
+    //   getColor: d => [255, 255, 255],
+    //   getRadius: 10,
+    //   getElevation: d => 10,
     //   getPosition: d => d.geometry.coordinates,
-    //   getSize: d => 15,
-    //   getIcon: d => 'hospital',
-    //   getColor: d => [255, 0, 128],
+    //   radiusScale: 10,
+    //   radiusMinPixels: 1,
+    //   radiusMaxPixels: 50,
     //   onHover: object => this._onHover(object),
     //   onClick: object => this._onObjectClick(object),
     // });
 
-    const layer4 = new ScatterplotLayer({
-      id: 'police-layer',
+    const layer2 = new IconLayer({
+      id: 'hospital-icon-layer',
+      data: this.state.hospitals,
+      pickable: true,
+      visible: true,
+      iconAtlas: 'hospital.png',
+      iconMapping: {
+        hospital: {
+          x: 0,
+          y: 0,
+          width: 32,
+          height: 32,
+          anchorY: 32,
+          mask: false,
+        },
+      },
+      sizeScale: 1,
+      opacity: 0.6,
+      radiusMinPixels: 1,
+      getPosition: d => d.geometry.coordinates,
+      getSize: d => 40,
+      getIcon: d => 'hospital',
+      // getColor: d => [255, 0, 128],
+      onHover: object => this._onHover(object),
+      onClick: object => this._onObjectClick(object),
+    });
+
+    // const layer4 = new ScatterplotLayer({
+    //   id: 'police-layer',
+    //   data: police,
+    //   pickable: true,
+    //   extruded: true,
+    //   getColor: d => [30, 144, 255],
+    //   getRadius: 10,
+    //   getElevation: d => 10,
+    //   getPosition: d => [d.Longitude, d.Latitude],
+    //   radiusScale: 10,
+    //   radiusMinPixels: 1,
+    //   radiusMaxPixels: 50,
+    //   onHover: object => this._onHover(object),
+    //   onClick: object => this._onObjectClick(object),
+    // });
+
+    const layer4 = new IconLayer({
+      id: 'police-icon-layer',
       data: police,
       pickable: true,
-      extruded: true,
-      getColor: d => [30, 144, 255],
-      getRadius: 10,
-      getElevation: d => 10,
-      getPosition: d => [d.Longitude, d.Latitude],
-      radiusScale: 10,
+      visible: true,
+      iconAtlas: 'rifle.png',
+      iconMapping: {
+        police: {
+          x: 0,
+          y: 0,
+          width: 64,
+          height: 64,
+          anchorY: 64,
+          mask: false,
+        },
+      },
+      sizeScale: 1,
+      opacity: 0.6,
       radiusMinPixels: 1,
-      radiusMaxPixels: 50,
+      getPosition: d => [d.Longitude, d.Latitude],
+      getSize: d => 40,
+      getIcon: d => 'police',
+      // getColor: d => [255, 0, 128],
       onHover: object => this._onHover(object),
       onClick: object => this._onObjectClick(object),
     });
