@@ -14,7 +14,7 @@
   "dependencies": {
     "@mapbox/mapbox-gl-traffic": "^1.0.2",
     "autobind-decorator": "^2.2.1",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "buble-loader": "^0.5.1",
     "d3": "^5.7.0",
     "d3-ease": "^1.0.5",
